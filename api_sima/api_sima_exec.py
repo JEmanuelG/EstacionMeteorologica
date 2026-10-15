@@ -1,7 +1,11 @@
+import os
+
 from flask import Flask, render_template, jsonify, request
 import mysql.connector
 from datetime import datetime, timedelta
 import random  # Para simular variaciones suaves en la predicción si hay pocos datos
+
+from pyngrok import ngrok
 
 app = Flask(__name__, template_folder="../front_sima")
 
@@ -96,5 +100,22 @@ def api_forecast():
 def index():
     return render_template('sima_index.html')
 
+
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# Solo inicializamos ngrok dentro del proceso activo ejecutor de Werkzeug
+    # Esto evita el error HTTP 502 / ERR_NGROK_334 al reiniciar con debug=True
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        # Configurar token de ngrok
+        ngrok.set_auth_token("3EsBUFaDUnWbKQV1ZlBQYMF1NHA_3equY6VZkv4YWhoGu1XJG")
+
+        # Limpiar cualquier proceso/túnel de ngrok previo que haya quedado activo
+        ngrok.kill()
+
+        # Abrir el túnel HTTP apuntando al puerto local 5000
+        public_url = ngrok.connect(5000)
+        print(f"\n * Túnel ngrok activo en: {public_url}\n")
+
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
